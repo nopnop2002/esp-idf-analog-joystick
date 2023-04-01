@@ -1,7 +1,7 @@
 # esp-idf-analog-joystick
 2-axis XY joystick using ESP-IDF.   
 
-I bought this 2-axis XY joystick module for $1 on AliExpress.   
+I bought [this](https://roboticafacil.es/datasheets/ky-023.pdf) 2-axis XY joystick module for $1 on AliExpress.   
 ![analog-joystick](https://user-images.githubusercontent.com/6020549/229271421-48bbf957-44ce-476f-8b74-bed132041051.JPG)
 
 So I used ESP-IDF to read the X and Y coordinates.   
