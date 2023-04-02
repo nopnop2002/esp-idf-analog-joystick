@@ -5,7 +5,7 @@ I bought [this](https://roboticafacil.es/datasheets/ky-023.pdf) 2-axis XY joysti
 ![analog-joystick](https://user-images.githubusercontent.com/6020549/229271421-48bbf957-44ce-476f-8b74-bed132041051.JPG)
 
 So I used ESP-IDF to read the X and Y positions.   
-VRx and VRy are analog inputs.   
+VRx and VRy are analog output pins.   
 ESP32 has two ADCs, ADC1 and ADC2.   
 This project uses ADC1.   
 
