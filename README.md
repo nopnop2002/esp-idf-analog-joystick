@@ -40,7 +40,7 @@ Set the information of your access point.
 
 ## Device Setting
 Set the information of gpio for analog input and degiatl input.   
-
+VRX and VRY are analog inputs and SW is a digital input.   
 ![config-device](https://user-images.githubusercontent.com/6020549/229271397-e6adde12-9131-4d92-a344-7e1d5377479e.jpg)
 
 Analog input gpio for ESP32 is GPIO32 ~ GPIO39. 12Bits width.   
