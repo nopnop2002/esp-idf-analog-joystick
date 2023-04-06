@@ -43,9 +43,9 @@ websocket.onmessage = function(evt) {
 			//console.log("gauge1.options.units=" + gauge1.options.units);
 			console.log("METER values[1]=" + values[1]);
 			console.log("METER values[2]=" + values[2]);
-			gauge1.options.units = values[1];
+			//gauge1.options.units = values[1];
 			document.getElementById("canvas1").style.display = "inline-block";
-			gauge2.options.units = values[2];
+			//gauge2.options.units = values[2];
 			document.getElementById("canvas2").style.display = "inline-block";
 			break;
 

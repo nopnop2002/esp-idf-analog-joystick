@@ -54,88 +54,72 @@
 
 		Plotly.newPlot('myDiv', data, layout)
 
-		var gauge1 = new RadialGauge({
+		var gauge1 = new LinearGauge({
 			renderTo: 'canvas1',
-			width: 200,
-			height: 200,
-			units: "Deg",
+			width: 600,
+			height: 120,
+			//units: "Deg",
 			minValue: -10,
 			maxValue: 10,
 			majorTicks: [
 				"-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10"
 			],
+			valueBox: false,
 			minorTicks: 2,
-			ticksAngle: 180,
-			startAngle: 90,
+			strokeTicks: true,
 			highlights: [
 				{ from: -10, to: 0, color: "rgba(0, 0, 255, .3)" },
 				{ from: 0, to: 10, color: "rgba(255, 0, 0, .75)" }
 			],
-			strokeTicks: true,
-			colorMajorTicks: "#ddd",
-			colorMinorTicks: "#ddd",
-			colorTitle: "#eee",
-			colorUnits: "#ccc",
-			colorNumbers: "#eee",
-			//colorPlate: "#fff",
-			colorPlate: "#222",
+			colorPlate: "#fff",
+			//colorBarProgress: "#327ac0",
+			colorBarProgress: "#00bfff",
+			colorBar: "#f5f5f5",
 			borderShadowWidth: 0,
-			borders: true,
-			colorBorderOuter: "#333",
-			colorBorderOuterEnd: "#111",
-			//colorBorderMiddle: "#222",
-			//colorBorderMiddleEnd: "#111",
-			colorBorderInner: "#111",
-			colorBorderInnerEnd: "#333",
-			needleType: "arrow",
-			needleWidth: 2,
-			needleCircleSize: 7,
-			needleCircleOuter: true,
-			needleCircleInner: false,
+			borders: false,
+			needleType: "line",
+			needleWidth: 8,
 			animationDuration: 1500,
-			animationRule: "linear"
+			animationRule: "linear",
+			tickSide: "left",
+			numberSide: "left",
+			needleSide: "left",
+			barStrokeWidth: 7,
+			barBeginCircle: false
 		}).draw();
 
-		var gauge2 = new RadialGauge({
+		var gauge2 = new LinearGauge({
 			renderTo: 'canvas2',
-			width: 200,
-			height: 200,
-			units: "Deg",
+			width: 120,
+			height: 600,
+			//units: "Deg",
 			minValue: -10,
 			maxValue: 10,
 			majorTicks: [
 				"-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10"
 			],
-			minorTicks: 3,
-			ticksAngle: 180,
-			startAngle: 90,
+			valueBox: false,
+			minorTicks: 2,
+			strokeTicks: true,
 			highlights: [
 				{ from: -10, to: 0, color: "rgba(0, 0, 255, .3)" },
 				{ from: 0, to: 10, color: "rgba(255, 0, 0, .75)" }
 			],
-			strokeTicks: true,
-			colorMajorTicks: "#ddd",
-			colorMinorTicks: "#ddd",
-			colorTitle: "#eee",
-			colorUnits: "#ccc",
-			colorNumbers: "#eee",
-			//colorPlate: "#fff",
-			colorPlate: "#222",
+			colorPlate: "#fff",
+			//colorBarProgress: "#327ac0",
+			colorBarProgress: "#00bfff",
+			colorBar: "#f5f5f5",
 			borderShadowWidth: 0,
-			borders: true,
-			colorBorderOuter: "#333",
-			colorBorderOuterEnd: "#111",
-			//colorBorderMiddle: "#222",
-			//colorBorderMiddleEnd: "#111",
-			colorBorderInner: "#111",
-			colorBorderInnerEnd: "#333",
-			needleType: "arrow",
-			needleWidth: 2,
-			needleCircleSize: 7,
-			needleCircleOuter: true,
-			needleCircleInner: false,
+			borders: false,
+			needleType: "line",
+			needleWidth: 8,
 			animationDuration: 1500,
-			animationRule: "linear"
+			animationRule: "linear",
+			tickSide: "left",
+			numberSide: "left",
+			needleSide: "left",
+			barStrokeWidth: 7,
+			barBeginCircle: false
 		}).draw();
 
 		document.getElementById("canvas1").style.display = "none";
