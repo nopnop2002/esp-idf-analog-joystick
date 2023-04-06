@@ -1,7 +1,6 @@
 # posision
 
-![position](https://user-images.githubusercontent.com/6020549/230250780-08eb8a58-d971-46da-a17f-e3a157653f14.jpg)
-
+![position](https://user-images.githubusercontent.com/6020549/230252775-3e44a11f-7f51-4e34-a050-0c57392fbb3e.jpg)
 
 # Installation
 
