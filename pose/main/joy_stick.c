@@ -25,20 +25,6 @@ extern MessageBufferHandle_t xMessageBufferToClient;
 
 const static char *TAG = "STICK";
 
-#if 0
-/*---------------------------------------------------------------
-		ADC General Macros
----------------------------------------------------------------*/
-//ADC1 Channels
-#if CONFIG_IDF_TARGET_ESP32
-#define EXAMPLE_ADC1_CHAN0			ADC_CHANNEL_4
-#define EXAMPLE_ADC1_CHAN1			ADC_CHANNEL_5
-#else
-#define EXAMPLE_ADC1_CHAN0			ADC_CHANNEL_2
-#define EXAMPLE_ADC1_CHAN1			ADC_CHANNEL_3
-#endif
-#endif
-
 #define GPIO_INPUT CONFIG_SW_GPIO
 
 static int adc_raw[2][10];
