@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="main.css">
+	<script src="//cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/all/gauge.min.js"></script>
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	<title>JoyStick Pose</title>
+</head>
+
+<body>
+	<h1 id="header"></h1>
+
+	<div class="wrapper">
+		<div id="myDiv" class="box1"></div>
+		<div id="myDiv2" class="box2">
+			<canvas id="canvas1"></canvas>
+		</div>
+		<div id="myDiv3" class="box3">
+			<canvas id="canvas2"></canvas>
+		</div>
+	</div>
+
+	<script>
+		// wait for the page to load
+		//window.addEventListener('DOMContentLoaded', init);
+
+		var trace = {
+			x:[], y:[],
+			mode: 'markers',
+			marker: {
+				size: 20,
+				color: 'rgb(255, 0, 0)',
+				line: {
+				color: 'rgb(60, 60, 60)',
+				width: 0.5},
+				opacity: 0.8},
+			type: 'scatter'
+		};
+
+		var data = [trace];
+		var layout = { 
+			title:'VRx / VRr',
+			plot_bgcolor: 'rgb(66, 203, 245)',
+			height: 600,
+			width: 600,
+			margin: {
+				l: 40,
+				r: 20,
+				b: 20,
+				t: 30,
+			},
+		};
+
+		Plotly.newPlot('myDiv', data, layout)
+
+		var gauge1 = new RadialGauge({
+			renderTo: 'canvas1',
+			width: 200,
+			height: 200,
+			units: "Deg",
+			minValue: -10,
+			maxValue: 10,
+			majorTicks: [
+				"-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10"
+			],
+			minorTicks: 2,
+			ticksAngle: 180,
+			startAngle: 90,
+			highlights: [
+				{ from: -10, to: 0, color: "rgba(0, 0, 255, .3)" },
+				{ from: 0, to: 10, color: "rgba(255, 0, 0, .75)" }
+			],
+			strokeTicks: true,
+			colorMajorTicks: "#ddd",
+			colorMinorTicks: "#ddd",
+			colorTitle: "#eee",
+			colorUnits: "#ccc",
+			colorNumbers: "#eee",
+			//colorPlate: "#fff",
+			colorPlate: "#222",
+			borderShadowWidth: 0,
+			borders: true,
+			colorBorderOuter: "#333",
+			colorBorderOuterEnd: "#111",
+			//colorBorderMiddle: "#222",
+			//colorBorderMiddleEnd: "#111",
+			colorBorderInner: "#111",
+			colorBorderInnerEnd: "#333",
+			needleType: "arrow",
+			needleWidth: 2,
+			needleCircleSize: 7,
+			needleCircleOuter: true,
+			needleCircleInner: false,
+			animationDuration: 1500,
+			animationRule: "linear"
+		}).draw();
+
+		var gauge2 = new RadialGauge({
+			renderTo: 'canvas2',
+			width: 200,
+			height: 200,
+			units: "Deg",
+			minValue: -10,
+			maxValue: 10,
+			majorTicks: [
+				"-10", "-8", "-6", "-4", "-2", "0", "2", "4", "6", "8", "10"
+			],
+			minorTicks: 3,
+			ticksAngle: 180,
+			startAngle: 90,
+			highlights: [
+				{ from: -10, to: 0, color: "rgba(0, 0, 255, .3)" },
+				{ from: 0, to: 10, color: "rgba(255, 0, 0, .75)" }
+			],
+			strokeTicks: true,
+			colorMajorTicks: "#ddd",
+			colorMinorTicks: "#ddd",
+			colorTitle: "#eee",
+			colorUnits: "#ccc",
+			colorNumbers: "#eee",
+			//colorPlate: "#fff",
+			colorPlate: "#222",
+			borderShadowWidth: 0,
+			borders: true,
+			colorBorderOuter: "#333",
+			colorBorderOuterEnd: "#111",
+			//colorBorderMiddle: "#222",
+			//colorBorderMiddleEnd: "#111",
+			colorBorderInner: "#111",
+			colorBorderInnerEnd: "#333",
+			needleType: "arrow",
+			needleWidth: 2,
+			needleCircleSize: 7,
+			needleCircleOuter: true,
+			needleCircleInner: false,
+			animationDuration: 1500,
+			animationRule: "linear"
+		}).draw();
+
+		document.getElementById("canvas1").style.display = "none";
+		document.getElementById("canvas2").style.display = "none";
+
+	</script>
+
+	<script type="text/javascript" src="main.js"></script>
+</body>
+</html>
+
