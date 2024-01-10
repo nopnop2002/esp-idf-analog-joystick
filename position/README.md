@@ -7,7 +7,7 @@
 ```Shell
 git clone https://github.com/nopnop2002/esp-idf-analog-joystick
 cd esp-idf-analog-joystick/position
-idf.py set-target {esp32/esp32s2/esp32s3/esp32c2/esp32c3}
+idf.py set-target {esp32/esp32s2/esp32s3/esp32c2/esp32c3/esp32c6}
 idf.py menuconfig
 idf.py flash
 ```
