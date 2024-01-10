@@ -1,14 +1,15 @@
-/*	 JoyStick Example
+/*
+	Analog JoyStick Example
 
-	 This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-	 Unless required by applicable law or agreed to in writing, this
-	 software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-	 CONDITIONS OF ANY KIND, either express or implied.
+	This example code is in the Public Domain (or CC0 licensed, at your option.)
+	Unless required by applicable law or agreed to in writing, this
+	software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+	CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "freertos/event_groups.h"
 #include "freertos/message_buffer.h"
 #include "esp_system.h"
@@ -20,6 +21,7 @@
 
 #include "websocket_server.h"
 
+QueueHandle_t xQueueCmd;
 MessageBufferHandle_t xMessageBufferToClient;
 
 static const char *TAG = "MAIN";
@@ -150,6 +152,31 @@ void server_task(void* pvParameters);
 void client_task(void* pvParameters);
 void joy_stick(void *pvParameters);
 
+void keyin(void *pvParameters)
+{
+	ESP_LOGI(pcTaskGetName(NULL), "Start");
+
+	uint16_t c;
+	int16_t cmd;
+	while (1) {
+		c = fgetc(stdin);
+		if (c == 0xffff) {
+			vTaskDelay(10);
+			continue;
+		}
+		//ESP_LOGI(TAG, "c=%x", c);
+		if (c == 0x0a) {
+			ESP_LOGD(pcTaskGetName(NULL), "Push Enter");
+			if (xQueueSend(xQueueCmd, &cmd, 10) != pdPASS) {
+				ESP_LOGE(pcTaskGetName(NULL), "xQueueSend fail");
+			}
+		}
+	}
+
+	/* Never reach */
+	vTaskDelete( NULL );
+}
+
 void app_main(void)
 {
 	// Initialize NVS
@@ -165,6 +192,10 @@ void app_main(void)
 
 	// Initialize mDNS
 	initialise_mdns();
+
+	// Create Queue
+	xQueueCmd = xQueueCreate( 1, sizeof(int16_t) );
+	configASSERT( xQueueCmd );
 
 	// Create Message Buffer
 	xMessageBufferToClient = xMessageBufferCreate(1024);
@@ -184,6 +215,9 @@ void app_main(void)
 
 	// Start web client
 	xTaskCreate(&client_task, "CLIENT", 1024*3, (void *)0x111, 5, NULL);
+
+	// Start keyboard task
+	xTaskCreate(keyin, "KEYIN", 1024*4, NULL, 2, NULL);
 
 	// Start joy-stick task
 	xTaskCreate(joy_stick, "STICK", 1024*4, NULL, 5, NULL);

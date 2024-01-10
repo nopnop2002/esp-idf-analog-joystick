@@ -1,37 +1,41 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+    Example of reading data from ADC1
+    This example code is in the Public Domain (or CC0 licensed, at your option.)
+    Unless required by applicable law or agreed to in writing, this
+    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+    CONDITIONS OF ANY KIND, either express or implied.
+*/
+
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "freertos/message_buffer.h"
 #include "esp_log.h"
 #include "soc/adc_channel.h"
 #if ESP_IDF_VERSION_MAJOR == 5 && ESP_IDF_VERSION_MINOR == 0
-#include "driver/adc.h" //  Need legacy adc driver for ADC1_GPIOxx_CHANNEL
+#include "driver/adc.h" //	Need legacy adc driver for ADC1_GPIOxx_CHANNEL
 #endif
 #include "esp_adc/adc_oneshot.h"
-#include "esp_adc/adc_cali.h"
-#include "esp_adc/adc_cali_scheme.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 #include "driver/gpio.h"
 #include "cJSON.h"
 
+extern QueueHandle_t xQueueCmd;
 extern MessageBufferHandle_t xMessageBufferToClient;
 
 const static char *TAG = "STICK";
 
 #define GPIO_INPUT CONFIG_SW_GPIO
 
-static int adc_raw[2][10];
-static int voltage[2][10];
-static bool example_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_cali_handle_t *out_handle);
-static void example_adc_calibration_deinit(adc_cali_handle_t handle);
-
+esp_err_t NVS_check_key(nvs_handle_t my_handle, char * key);
+esp_err_t NVS_read_key(nvs_handle_t my_handle, char * key, int32_t *value);
+esp_err_t NVS_write_key(nvs_handle_t my_handle, char * key, int32_t value);
 
 int map(int x, int in_min, int in_max, int out_min, int out_max) {
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -61,15 +65,38 @@ adc_channel_t gpio2adc(int gpio) {
 	if (gpio == 9) return ADC1_GPIO9_CHANNEL;
 	if (gpio == 10) return ADC1_GPIO10_CHANNEL;
 
-#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3
+#else
 	if (gpio == 0) return ADC1_GPIO0_CHANNEL;
 	if (gpio == 1) return ADC1_GPIO1_CHANNEL;
 	if (gpio == 2) return ADC1_GPIO2_CHANNEL;
 	if (gpio == 3) return ADC1_GPIO3_CHANNEL;
 	if (gpio == 4) return ADC1_GPIO4_CHANNEL;
+	if (gpio == 5) return ADC1_GPIO5_CHANNEL;
+	if (gpio == 6) return ADC1_GPIO6_CHANNEL;
 
 #endif
 	return -1;
+}
+
+void calibration(adc_oneshot_unit_handle_t adc1_handle, adc_channel_t adc1_channel_vrx, adc_channel_t adc1_channel_vry, int32_t *adc_avr) {
+	int adc_raw[2];
+	int32_t adc_sum[2];
+	//int32_t adc_avr[2];
+	adc_sum[0] = 0;
+	adc_sum[1] = 0;
+	for (int i=0;i<100;i++) {
+		ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, adc1_channel_vrx, &adc_raw[0]));
+		ESP_LOGD(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, adc1_channel_vrx, adc_raw[0]);
+		adc_sum[0] = adc_sum[0] + adc_raw[0];
+
+		ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, adc1_channel_vry, &adc_raw[1]));
+		ESP_LOGD(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, adc1_channel_vry, adc_raw[1]);
+		adc_sum[1] = adc_sum[1] + adc_raw[1];
+		vTaskDelay(2);
+	}
+	adc_avr[0] = adc_sum[0] / 100;
+	adc_avr[1] = adc_sum[1] / 100;
+	ESP_LOGD(TAG, "adc_avr[0] = %"PRIi32" adc_avr[1]=%"PRIi32, adc_avr[0], adc_avr[1]);
 }
 
 void joy_stick(void *pvParameters)
@@ -93,34 +120,105 @@ void joy_stick(void *pvParameters)
 	ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, adc1_channel_vrx, &config));
 	ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, adc1_channel_vry, &config));
 
-	// ADC1 Calibration Init
-	adc_cali_handle_t adc1_cali_handle = NULL;
-	bool do_calibration = example_adc_calibration_init(ADC_UNIT_1, ADC_ATTEN_DB_11, &adc1_cali_handle);
-	if (!do_calibration) {
-		vTaskDelete(NULL);
-	}
-
 	// Initialize GPIO
 	gpio_reset_pin(GPIO_INPUT);
 	gpio_set_direction(GPIO_INPUT, GPIO_MODE_INPUT);
+
+	// Open NVS
+	ESP_LOGI(TAG, "Opening Non-Volatile Storage handle... ");
+	esp_err_t err;
+	nvs_handle_t nvs_handle;
+	err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
+	if (err != ESP_OK) {
+		ESP_LOGE(TAG, "Error (%s) opening NVS handle", esp_err_to_name(err));
+		while(1) {
+			vTaskDelay(1);
+		}
+	}
+	ESP_LOGI(TAG, "Done");
+
+	int32_t vrx_center = 0;
+	int32_t vry_center = 0;
+	int32_t vrx_low = 0;
+	int32_t vry_low = 0;
+	int32_t vrx_high = 0;
+	int32_t vry_high = 0;
+	int16_t cmd;
+
+	// Check NVS
+	esp_err_t ret_vrx_center = NVS_check_key(nvs_handle, "vrx_center");
+	esp_err_t ret_vry_center = NVS_check_key(nvs_handle, "vry_center");
+	esp_err_t ret_vrx_low = NVS_check_key(nvs_handle, "vrx_low");
+	esp_err_t ret_vry_low = NVS_check_key(nvs_handle, "vry_low");
+	esp_err_t ret_vrx_high = NVS_check_key(nvs_handle, "vrx_high");
+	esp_err_t ret_vry_high = NVS_check_key(nvs_handle, "vry_high");
+	ESP_LOGD(TAG, "ret_vrx_center=%d ret_vrx_low=%d ret_vrx_high=%d", ret_vrx_center, ret_vrx_low, ret_vrx_high);
+	ESP_LOGD(TAG, "ret_vry_center=%d ret_vry_low=%d ret_vry_high=%d", ret_vry_center, ret_vry_low, ret_vry_high);
+	if (ret_vrx_center == ESP_OK && ret_vrx_low == ESP_OK && ret_vrx_high == ESP_OK &&
+		ret_vry_center == ESP_OK && ret_vry_low == ESP_OK && ret_vry_high == ESP_OK) {
+		// Read NVS
+		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vrx_center", &vrx_center));
+		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vry_center", &vry_center));
+		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vrx_low", &vrx_low));
+		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vry_low", &vry_low));
+		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vrx_high", &vrx_high));
+		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vry_high", &vry_high));
+		ESP_LOGI(TAG, "vrx_center=%"PRIi32" vrx_low=%"PRIi32" vrx_low=%"PRIi32, vrx_center, vrx_low, vrx_high);
+		ESP_LOGI(TAG, "vry_center=%"PRIi32" vry_low=%"PRIi32" vry_low=%"PRIi32, vry_center, vry_low, vry_high);
+	} else {
+		// Do calibration
+		int32_t adc_avr[2];
+		ESP_LOGW(TAG, "Don't touch the joystick. Press Enter when you are ready.");
+		xQueueReceive(xQueueCmd, &cmd, portMAX_DELAY);
+		calibration(adc1_handle, adc1_channel_vrx, adc1_channel_vry, adc_avr);
+		vrx_center = adc_avr[0];
+		vry_center = adc_avr[1];
+
+		ESP_LOGW(TAG, "Tilt the joystick all the way to the top. Press Enter when you are ready.");
+		xQueueReceive(xQueueCmd, &cmd, portMAX_DELAY);
+		calibration(adc1_handle, adc1_channel_vrx, adc1_channel_vry, adc_avr);
+		vry_low = adc_avr[1];
+
+		ESP_LOGW(TAG, "Tilt the joystick all the way to the buttom. Press Enter when you are ready.");
+		xQueueReceive(xQueueCmd, &cmd, portMAX_DELAY);
+		calibration(adc1_handle, adc1_channel_vrx, adc1_channel_vry, adc_avr);
+		vry_high = adc_avr[1];
+
+		ESP_LOGW(TAG, "Tilt the joystick all the way to the left. Press Enter when you are ready.");
+		xQueueReceive(xQueueCmd, &cmd, portMAX_DELAY);
+		calibration(adc1_handle, adc1_channel_vrx, adc1_channel_vry, adc_avr);
+		vrx_low = adc_avr[0];
+
+		ESP_LOGW(TAG, "Tilt the joystick all the way to the right. Press Enter when you are ready.");
+		xQueueReceive(xQueueCmd, &cmd, portMAX_DELAY);
+		calibration(adc1_handle, adc1_channel_vrx, adc1_channel_vry, adc_avr);
+		vrx_high = adc_avr[0];
+
+		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vrx_center", vrx_center));
+		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vry_center", vry_center));
+		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vrx_low", vrx_low));
+		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vry_low", vry_low));
+		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vrx_high", vrx_high));
+		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vry_high", vry_high));
+
+		ESP_LOGI(TAG, "vrx_center=%"PRIi32" vrx_low=%"PRIi32" vrx_low=%"PRIi32, vrx_center, vrx_low, vrx_high);
+		ESP_LOGI(TAG, "vry_center=%"PRIi32" vry_low=%"PRIi32" vry_low=%"PRIi32, vry_center, vry_low, vry_high);
+		ESP_LOGW(TAG, "Calibration Done. Press Enter when you are ready.");
+		xQueueReceive(xQueueCmd, &cmd, portMAX_DELAY);
+	}
 
 	int vrx = 0;
 	int vry = 0;
 	int sw = 0;
 	int sw_old = gpio_get_level(GPIO_INPUT);
 
+	int adc_raw[2];
 	while (1) {
-		ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, adc1_channel_vrx, &adc_raw[0][0]));
-		ESP_LOGD(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, adc1_channel_vrx, adc_raw[0][0]);
-		ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc1_cali_handle, adc_raw[0][0], &voltage[0][0]));
-		ESP_LOGD(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, adc1_channel_vrx, voltage[0][0]);
-		//vTaskDelay(pdMS_TO_TICKS(1000));
+		ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, adc1_channel_vrx, &adc_raw[0]));
+		ESP_LOGD(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, adc1_channel_vrx, adc_raw[0]);
 
-		ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, adc1_channel_vry, &adc_raw[0][1]));
-		ESP_LOGD(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, adc1_channel_vry, adc_raw[0][1]);
-		ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc1_cali_handle, adc_raw[0][1], &voltage[0][1]));
-		ESP_LOGD(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, adc1_channel_vry, voltage[0][1]);
-		ESP_LOGD(TAG, "Voltage: %d %d", voltage[0][0], voltage[0][1]);
+		ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, adc1_channel_vry, &adc_raw[1]));
+		ESP_LOGD(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, adc1_channel_vry, adc_raw[1]);
 
 		sw = 0;
 		int sw_new = gpio_get_level(GPIO_INPUT);
@@ -129,8 +227,17 @@ void joy_stick(void *pvParameters)
 			sw = 1;
 		}
 		sw_old = sw_new;
-		vrx = map(voltage[0][0], 0, 3300, -10, 10);
-		vry = map(voltage[0][1], 0, 3300, -10, 10);
+
+		if (adc_raw[0] <= vrx_center) {
+			vrx = map(adc_raw[0], vrx_low, vrx_center, -10, 0);
+		} else {
+			vrx = map(adc_raw[0], vrx_center+1, vrx_high, 0, 10);
+		}
+		if (adc_raw[1] <= vry_center) {
+			vry = map(adc_raw[1], vry_low, vry_center, -10, 0);
+		} else {
+			vry = map(adc_raw[1],  vry_center+1, vry_high, 0, 10);
+		}
 		ESP_LOGI(TAG, "vrx:%d vry:%d sw=%d", vrx, vry, sw);
 
 		// Send WEB request
@@ -154,70 +261,5 @@ void joy_stick(void *pvParameters)
 
 	// Never reach here
 	ESP_ERROR_CHECK(adc_oneshot_del_unit(adc1_handle));
-	example_adc_calibration_deinit(adc1_cali_handle);
 	vTaskDelete(NULL);
-}
-
-
-/*---------------------------------------------------------------
-		ADC Calibration
----------------------------------------------------------------*/
-static bool example_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_cali_handle_t *out_handle)
-{
-	adc_cali_handle_t handle = NULL;
-	esp_err_t ret = ESP_FAIL;
-	bool calibrated = false;
-
-#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-	if (!calibrated) {
-		ESP_LOGI(TAG, "calibration scheme version is %s", "Curve Fitting");
-		adc_cali_curve_fitting_config_t cali_config = {
-			.unit_id = unit,
-			.atten = atten,
-			.bitwidth = ADC_BITWIDTH_DEFAULT,
-		};
-		ret = adc_cali_create_scheme_curve_fitting(&cali_config, &handle);
-		if (ret == ESP_OK) {
-			calibrated = true;
-		}
-	}
-#endif
-
-#if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	if (!calibrated) {
-		ESP_LOGI(TAG, "calibration scheme version is %s", "Line Fitting");
-		adc_cali_line_fitting_config_t cali_config = {
-			.unit_id = unit,
-			.atten = atten,
-			.bitwidth = ADC_BITWIDTH_DEFAULT,
-		};
-		ret = adc_cali_create_scheme_line_fitting(&cali_config, &handle);
-		if (ret == ESP_OK) {
-			calibrated = true;
-		}
-	}
-#endif
-
-	*out_handle = handle;
-	if (ret == ESP_OK) {
-		ESP_LOGI(TAG, "Calibration Success");
-	} else if (ret == ESP_ERR_NOT_SUPPORTED || !calibrated) {
-		ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
-	} else {
-		ESP_LOGE(TAG, "Invalid arg or no memory");
-	}
-
-	return calibrated;
-}
-
-static void example_adc_calibration_deinit(adc_cali_handle_t handle)
-{
-#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-	ESP_LOGI(TAG, "deregister %s calibration scheme", "Curve Fitting");
-	ESP_ERROR_CHECK(adc_cali_delete_scheme_curve_fitting(handle));
-
-#elif ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
-	ESP_LOGI(TAG, "deregister %s calibration scheme", "Line Fitting");
-	ESP_ERROR_CHECK(adc_cali_delete_scheme_line_fitting(handle));
-#endif
 }

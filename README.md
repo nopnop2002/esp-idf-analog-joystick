@@ -24,7 +24,7 @@ ESP-IDF's ADC API has changed significantly since V5.0.
 ```Shell
 git clone https://github.com/nopnop2002/esp-idf-analog-joystick
 cd esp-idf-analog-joystick/pose
-idf.py set-target {esp32/esp32s2/esp32s3/esp32c2/esp32c3}
+idf.py set-target {esp32/esp32s2/esp32s3/esp32c2/esp32c3/esp32c6}
 idf.py menuconfig
 idf.py flash
 ```
@@ -50,7 +50,7 @@ Analog input gpio for ESP32C2 is GPIO00 ~ GPIO04. 12Bits width.
 Analog input gpio for ESP32C3 is GPIO00 ~ GPIO04. 12Bits width.   
 
 # Wireing
-|JOYSTICK||ESP32|ESP32-S2/S3|ESP32-C2/C3||
+|JOYSTICK||ESP32|ESP32-S2/S3|ESP32-C2/C3/C6||
 |:-:|:-:|:-:|:-:|:-:|:-:|
 |GND|--|GND|GND|GND||
 |+5V|--|3.3V|3.3V|3.3V||
@@ -61,6 +61,25 @@ Analog input gpio for ESP32C3 is GPIO00 ~ GPIO04. 12Bits width.
 (*1)You can change it to any ADC1 using menuconfig.   
 
 (*2)You can change it to any GPIO using menuconfig.   
+
+# Calibration
+The first time you run this project, it will calibrate.   
+Follow the on-screen instructions to calibrate.   
+```
+W (6886) STICK: Don't touch the joystick. Press Enter when you are ready.
+W (44806) STICK: Tilt the joystick all the way to the top. Press Enter when you are ready.
+W (50306) STICK: Tilt the joystick all the way to the buttom. Press Enter when you are ready.
+W (55006) STICK: Tilt the joystick all the way to the left. Press Enter when you are ready.
+W (59106) STICK: Tilt the joystick all the way to the right. Press Enter when you are ready.
+I (63006) STICK: vrx_center=1663 vrx_low=0 vrx_low=3408
+I (63006) STICK: vry_center=1614 vry_low=0 vry_low=3393
+W (63006) STICK: Calibration Done. Press Enter when you are ready.
+```
+
+Calibration data is recorded in NVS.   
+If you want to initialize the calibration data, use the following command:   
+```idf.py erase-flash```   
+
 
 # View X-Y positoion with built-in web server   
 ESP32 acts as a web server.   
