@@ -48,6 +48,7 @@ Analog input gpio for ESP32S2 is GPIO01 ~ GPIO10. 13Bits width.
 Analog input gpio for ESP32S3 is GPIO01 ~ GPIO10. 12Bits width.   
 Analog input gpio for ESP32C2 is GPIO00 ~ GPIO04. 12Bits width.   
 Analog input gpio for ESP32C3 is GPIO00 ~ GPIO04. 12Bits width.   
+Analog input gpio for ESP32C6 is GPIO00 ~ GPIO06. 12Bits width.   
 
 # Wireing
 |JOYSTICK||ESP32|ESP32-S2/S3|ESP32-C2/C3/C6||
