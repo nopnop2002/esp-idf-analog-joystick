@@ -17,9 +17,6 @@
 #include "freertos/message_buffer.h"
 #include "esp_log.h"
 #include "soc/adc_channel.h"
-#if ESP_IDF_VERSION_MAJOR == 5 && ESP_IDF_VERSION_MINOR == 0
-#include "driver/adc.h" //	Need legacy adc driver for ADC1_GPIOxx_CHANNEL
-#endif
 #include "esp_adc/adc_oneshot.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -111,7 +108,8 @@ void joy_stick(void *pvParameters)
 	// ADC1 Config
 	adc_oneshot_chan_cfg_t config = {
 		.bitwidth = ADC_BITWIDTH_DEFAULT,
-		.atten = ADC_ATTEN_DB_11,
+		//.atten = ADC_ATTEN_DB_11,
+		.atten = ADC_ATTEN_DB_12,
 	};
 	adc_channel_t adc1_channel_vrx = gpio2adc(CONFIG_VRX_GPIO);
 	ESP_LOGI(TAG, "CONFIG_VRX_GPIO=%d adc1_channel_vrx=%d", CONFIG_VRX_GPIO, adc1_channel_vrx);
