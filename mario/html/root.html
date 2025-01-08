@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" type="text/css" href="main.css">
+	<script src="//cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/all/gauge.min.js"></script>
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	<title>JoyStick Animation</title>
+	<style>
+	  * {
+		padding: 0;
+		margin: 0;
+	  }
+	  canvas {
+		background: #eee;
+		display: block;
+	  }
+	</style>
+</head>
+
+<body>
+	<h1 id="header"></h1>
+	<canvas id="maincanvas" width="640" height="480"></canvas>
+	<script>
+
+	// Get canvas element
+	const canvas = document.getElementById("maincanvas");
+	const ctx = canvas.getContext("2d");
+
+	// Define and initialize the coordinates for displaying the image
+	var x = 320;
+	var y = 220;
+
+	// Allows screen drawing to be performed at load time
+	window.addEventListener("load", update);
+
+	// Function definition to update the screen (this process is executed repeatedly)
+	function update() {
+	  // Clear entire screen
+	  ctx.clearRect(0, 0, 640, 480);
+
+	  // Move left
+	  if (vrx == -1) {
+		console.log("x=" +x);
+		if (x > 0) x = x - 1;
+	  }
+	  // Move right
+	  if (vrx == 1) {
+		console.log("x=" +x);
+		if (x < 610) x = x + 1;
+	  }
+	  // Move down
+	  if (vry == 1) {
+		console.log("y=" +y);
+		if (y > 0) y = y - 1;
+	  }
+	  // Move up
+	  if (vry == -1) {
+		console.log("y=" +y);
+		if (y < 445) y = y + 1;
+	  }
+
+	  // Show images of mario
+	  var image = new Image();
+	  //image.src = "./mario.png";
+	  if (png_file == 0) image.src = "./mario0.png";
+	  if (png_file == 1) image.src = "./mario1.png";
+	  ctx.drawImage(image, x, y, 32, 32);
+
+	  // Repaint
+	  window.requestAnimationFrame(update);
+	}
+	</script>
+	<script type="text/javascript" src="main.js"></script>
+</body>
+</html>
+

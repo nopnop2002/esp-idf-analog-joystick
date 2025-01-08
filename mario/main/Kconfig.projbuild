@@ -1,0 +1,101 @@
+menu "Application Configuration"
+
+	config ADC_RANGE_MIN
+		int
+		default 32 if IDF_TARGET_ESP32
+		default  1 if IDF_TARGET_ESP32S2
+		default  1 if IDF_TARGET_ESP32S3
+		default  0 if IDF_TARGET_ESP32C2
+		default  0 if IDF_TARGET_ESP32C3
+		default  0 if IDF_TARGET_ESP32C6
+
+	config ADC_RANGE_MAX
+		int
+		default 39 if IDF_TARGET_ESP32
+		default 10 if IDF_TARGET_ESP32S2
+		default 10 if IDF_TARGET_ESP32S3
+		default  4 if IDF_TARGET_ESP32C2
+		default  4 if IDF_TARGET_ESP32C3
+		default  6 if IDF_TARGET_ESP32C6
+
+	config GPIO_RANGE_MAX
+		int
+		default 33 if IDF_TARGET_ESP32
+		default 46 if IDF_TARGET_ESP32S2
+		default 48 if IDF_TARGET_ESP32S3
+		default 18 if IDF_TARGET_ESP32C2
+		default 19 if IDF_TARGET_ESP32C3
+		default 30 if IDF_TARGET_ESP32C6
+
+	menu "WiFi Setting"
+
+		config ESP_WIFI_SSID
+			string "WiFi SSID"
+			default "myssid"
+			help
+				SSID (network name) to connect to.
+
+		config ESP_WIFI_PASSWORD
+			string "WiFi Password"
+			default "mypassword"
+			help
+				WiFi password (WPA or WPA2) to use.
+
+		config ESP_MAXIMUM_RETRY
+			int "Maximum retry"
+			default 5
+			help
+				Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+
+	endmenu
+
+
+	menu "Device Setting"
+
+		config VRX_GPIO
+			int "VRX GPIO number"
+			range ADC_RANGE_MIN ADC_RANGE_MAX
+			default 32 if IDF_TARGET_ESP32
+			default  1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default  0 # C3 and others
+			help
+				GPIO number (IOxx) to VRX.
+				Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to ADC.
+				On the ESP32, 8 channels: GPIO32 - GPIO39.
+				On the ESP32-S2, 10 channels: GPIO1 - GPIO10.
+				On the ESP32-S3, 10 channels: GPIO1 - GPIO10.
+				On the ESP32-C2, 5 channels: GPIO0 - GPIO4.
+				On the ESP32-C3, 5 channels: GPIO0 - GPIO4.
+				On the ESP32-C6, 7 channels: GPIO0 - GPIO6.
+
+		config VRY_GPIO
+			int "VRY GPIO number"
+			range ADC_RANGE_MIN ADC_RANGE_MAX
+			default 33 if IDF_TARGET_ESP32
+			default  2 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default  1 # C3 and others
+			help
+				GPIO number (IOxx) to VRY.
+				Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to ADC.
+				On the ESP32, 8 channels: GPIO32 - GPIO39.
+				On the ESP32-S2, 10 channels: GPIO1 - GPIO10.
+				On the ESP32-S3, 10 channels: GPIO1 - GPIO10.
+				On the ESP32-C2, 5 channels: GPIO0 - GPIO4.
+				On the ESP32-C3, 5 channels: GPIO0 - GPIO4.
+				On the ESP32-C6, 7 channels: GPIO0 - GPIO6.
+
+		config SW_GPIO
+			int "SW GPIO number"
+			range 0 GPIO_RANGE_MAX
+			default 15 if IDF_TARGET_ESP32
+			default  3 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+			default  2 # C3 and others
+			help
+				GPIO number (IOxx) to SW.
+				Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to MOSI.
+				On the ESP32, GPIOs 35-39 are input-only so cannot be used as outputs.
+				On the ESP32-S2, GPIO 46 is input-only so cannot be used as outputs.
+
+	endmenu
+
+endmenu
