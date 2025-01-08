@@ -161,8 +161,8 @@ void joy_stick(void *pvParameters)
 		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vry_low", &vry_low));
 		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vrx_high", &vrx_high));
 		ESP_ERROR_CHECK(NVS_read_key(nvs_handle, "vry_high", &vry_high));
-		ESP_LOGI(TAG, "vrx_center=%"PRIi32" vrx_low=%"PRIi32" vrx_low=%"PRIi32, vrx_center, vrx_low, vrx_high);
-		ESP_LOGI(TAG, "vry_center=%"PRIi32" vry_low=%"PRIi32" vry_low=%"PRIi32, vry_center, vry_low, vry_high);
+		ESP_LOGI(TAG, "vrx_center=%"PRIi32" vrx_low=%"PRIi32" vrx_high=%"PRIi32, vrx_center, vrx_low, vrx_high);
+		ESP_LOGI(TAG, "vry_center=%"PRIi32" vry_low=%"PRIi32" vry_high=%"PRIi32, vry_center, vry_low, vry_high);
 	} else {
 		// Do calibration
 		int32_t adc_avr[2];
@@ -199,8 +199,8 @@ void joy_stick(void *pvParameters)
 		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vrx_high", vrx_high));
 		ESP_ERROR_CHECK(NVS_write_key(nvs_handle, "vry_high", vry_high));
 
-		ESP_LOGI(TAG, "vrx_center=%"PRIi32" vrx_low=%"PRIi32" vrx_low=%"PRIi32, vrx_center, vrx_low, vrx_high);
-		ESP_LOGI(TAG, "vry_center=%"PRIi32" vry_low=%"PRIi32" vry_low=%"PRIi32, vry_center, vry_low, vry_high);
+		ESP_LOGI(TAG, "vrx_center=%"PRIi32" vrx_low=%"PRIi32" vrx_high=%"PRIi32, vrx_center, vrx_low, vrx_high);
+		ESP_LOGI(TAG, "vry_center=%"PRIi32" vry_low=%"PRIi32" vry_high=%"PRIi32, vry_center, vry_low, vry_high);
 		ESP_LOGW(TAG, "Calibration Done. Press Enter when you are ready.");
 		xQueueReceive(xQueueCmd, &cmd, portMAX_DELAY);
 	}
@@ -231,11 +231,13 @@ void joy_stick(void *pvParameters)
 		} else {
 			vrx = map(adc_raw[0], vrx_center+1, vrx_high, 0, 90);
 		}
+		ESP_LOGI(TAG, "vrx_low=%"PRIi32" vrx_center=%"PRIi32" vrx_high=%"PRIi32" vrx=%d", vrx_low, vrx_center, vrx_high, vrx);
 		if (adc_raw[1] <= vry_center) {
 			vry = map(adc_raw[1], vry_low, vry_center, -90, 0);
 		} else {
 			vry = map(adc_raw[1], vry_center+1, vry_high, 0, 90);
 		}
+		ESP_LOGI(TAG, "vry_low=%"PRIi32" vry_center=%"PRIi32" vry_high=%"PRIi32" vry=%d", vry_low, vry_center, vry_high, vry);
 		ESP_LOGI(TAG, "vrx:%d vry:%d heading=%d", vrx, vry, heading);
 
 		// Send WEB request
