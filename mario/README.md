@@ -1,6 +1,7 @@
 # mario
 
-![mario](https://github.com/user-attachments/assets/f616add8-4041-4156-8319-3989dd2abc68)
+![mario1](https://github.com/user-attachments/assets/5196d671-9a26-4be3-9099-cbe5e15c1356)
+![mario2](https://github.com/user-attachments/assets/377efeeb-f47b-4b8c-a3f4-bd69aebba7ea)
 
 The image file was borrowed from [here](https://github.com/taku7777777/mario-game-tutorial-01-03-02).   
 
