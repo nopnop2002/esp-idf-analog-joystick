@@ -48,7 +48,7 @@ void client_task(void* pvParameters) {
 			ESP_LOGD(TAG, "id=[%s]",id);
 
 			if ( strcmp (id, "init") == 0) {
-				sprintf(outBuffer,"HEAD%cJoy Stick Animation Display using ESP32", DEL);
+				sprintf(outBuffer,"HEAD%cAnimation Display using ESP32", DEL);
 				ESP_LOGD(TAG, "outBuffer=[%s]", outBuffer);
 				ws_server_send_text_all(outBuffer,strlen(outBuffer));
 			} // end if
